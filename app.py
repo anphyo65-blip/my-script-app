@@ -1,15 +1,12 @@
-import streamlit as st
+import json
+from google.oauth2 import service_account
 import google.generativeai as genai
-import os
-import time
-import tempfile
+import streamlit as st
 
 st.set_page_config(page_title="Movie to Script AI", page_icon="🎬")
 
 st.title("🎬 Movie to Script AI")
-st.write("ဗီဒီယိုတင်ပြီး ဇာတ်လမ်းစခရစ်ကို အလိုအလျောက် ရေးခိုင်းပါမည်။")
-import json
-from google.oauth2 import service_account
+st.write("ဗီဒီယိုတင်ပြီး ဇာတ်လမ်းအကျဉ်းကို အလိုအလျောက် ရေးခိုင်းပါ။")
 
 st.sidebar.header("🔑 API Setup")
 st.sidebar.success("✅ စနစ်မှ API ချိတ်ဆက်ထားပြီးပါပြီ။")
@@ -22,42 +19,28 @@ if st.button("🚀 Generate Narrative Script"):
     else:
         try:
             with st.spinner("AI သို့ ချိတ်ဆက်နေပါသည်... (ခဏစောင့်ပါ)"):
+                
+                # ၁။ Service Account ဖြင့် ချိတ်ဆက်ခြင်း (အောင်မြင်ပြီးသား အပိုင်း)
                 creds_dict = json.loads(st.secrets["gcp_json"])
                 credentials = service_account.Credentials.from_service_account_info(creds_dict)
                 genai.configure(credentials=credentials)
-
                 
-               # ဗီဒီယိုဖိုင်ကို ယာယီသိမ်းဆည်းခြင်း
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_video:
-                    temp_video.write(uploaded_file.read())
-                    video_path = temp_video.name
-
-                # AI ဆီသို့ ဗီဒီယို လှမ်းပို့ခြင်း
-                st.info("ဗီဒီယိုကို AI ထံသို့ ပို့ဆောင်နေပါသည်... (ဗီဒီယိုအရွယ်အစားပေါ်မူတည်၍ အချိန်အနည်းငယ် ကြာနိုင်ပါသည်)")
-                video_file = genai.upload_file(path=video_path)
-
-                # AI မှ ဗီဒီယိုကို ကြည့်ရှုစစ်ဆေးခြင်း
-                st.info("AI မှ ဗီဒီယိုကို ကြည့်ရှုစစ်ဆေးနေပါသည်...")
-                while video_file.state.name == "PROCESSING":
-                    time.sleep(3)
-                    video_file = genai.get_file(video_file.name)
-
-                if video_file.state.name == "FAILED":
-                    st.error("ဗီဒီယို စစ်ဆေးခြင်း မအောင်မြင်ပါ။")
-                else:
-                    st.info("စခရစ် စတင် ရေးသားနေပါပြီ...")
-                    model = genai.GenerativeModel(model_name="gemini-1.5-pro")
-                    
-                    # AI ကို ခိုင်းစေမည့် စာသား
-                    prompt = "ဒီဗီဒီယိုကို သေချာကြည့်ပြီး ဇာတ်လမ်းပြန်ပြောပြတဲ့ (Recap) စခရစ်တစ်ခုကို မြန်မာလို အသေးစိတ် ရေးပေးပါ။"
-                    
-                    response = model.generate_content([video_file, prompt])
-                    
-                    st.success("အောင်မြင်စွာ ရေးသားပြီးပါပြီ!")
-                    st.write("---")
-                    st.write(response.text)
-                    
-                # ယာယီဖိုင်ကို ပြန်ဖျက်ခြင်း
-                os.remove(video_path)
+                # ၂။ File API ကို ရှောင်ကွင်းပြီး ဗီဒီယိုကို တိုက်ရိုက်ဖတ်ယူခြင်း
+                video_bytes = uploaded_file.read()
+                
+                # ၃။ AI Model ခေါ်ယူခြင်း
+                model = genai.GenerativeModel("gemini-1.5-pro")
+                
+                # ၄။ AI ထံသို့ တိုက်ရိုက် (Inline) ပို့ဆောင်ခြင်း (API Key လုံးဝ မလိုတော့ပါ)
+                prompt = "ဒီဗီဒီယိုကို သေချာကြည့်ပြီး ဇာတ်လမ်း အပြည့်အစုံကို မြန်မာလို ပြန်ပြောပြပေးပါ။" 
+                
+                response = model.generate_content([
+                    {"mime_type": "video/mp4", "data": video_bytes},
+                    prompt
+                ])
+                
+                st.success("✅ အောင်မြင်ပါသည်!")
+                st.write(response.text)
+                
         except Exception as e:
             st.error(f"Error တက်သွားပါသည် - {e}")
