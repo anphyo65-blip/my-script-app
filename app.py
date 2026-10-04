@@ -29,7 +29,7 @@ if st.button("🚀 Generate Narrative Script"):
                 video_bytes = uploaded_file.read()
                 
                 # ၃။ AI Model ခေါ်ယူခြင်း
-                model = genai.GenerativeModel("gemini-1.5-pro")
+                model = genai.GenerativeModel("gemini-1.5-flash")
                 
                 # ၄။ AI ထံသို့ တိုက်ရိုက် (Inline) ပို့ဆောင်ခြင်း (API Key လုံးဝ မလိုတော့ပါ)
                 prompt = "ဒီဗီဒီယိုကို သေချာကြည့်ပြီး ဇာတ်လမ်း အပြည့်အစုံကို မြန်မာလို ပြန်ပြောပြပေးပါ။" 
