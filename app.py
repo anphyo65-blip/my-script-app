@@ -8,23 +8,26 @@ st.set_page_config(page_title="Movie to Script AI", page_icon="🎬")
 
 st.title("🎬 Movie to Script AI")
 st.write("ဗီဒီယိုတင်ပြီး ဇာတ်လမ်းစခရစ်ကို အလိုအလျောက် ရေးခိုင်းပါမည်။")
+import json
+from google.oauth2 import service_account
 
 st.sidebar.header("🔑 API Setup")
-api_key = st.sidebar.text_input("Gemini API Key ကို ထည့်ပါ:", type="password")
+st.sidebar.success("✅ စနစ်မှ API ချိတ်ဆက်ထားပြီးပါပြီ။")
 
 uploaded_file = st.file_uploader("ဇာတ်လမ်း ဗီဒီယို တင်ရန် (MP4, AVI, MOV)", type=['mp4', 'avi', 'mov', 'mkv'])
 
 if st.button("🚀 Generate Narrative Script"):
-    if not api_key:
-        st.warning("⚠️ ကျေးဇူးပြု၍ ဘေးဘက်တွင် API Key အရင်ထည့်ပါ။")
-    elif not uploaded_file:
-        st.warning("⚠️ ကျေးဇူးပြု၍ ဗီဒီယို အရင်တင်ပါ။")
+    if not uploaded_file:
+        st.warning("⚠️ ကျေးဇူးပြု၍ ဗီဒီယို အရင်တင်ပါ")
     else:
         try:
             with st.spinner("AI သို့ ချိတ်ဆက်နေပါသည်... (ခဏစောင့်ပါ)"):
-                genai.configure(api_key=api_key)
+                creds_dict = json.loads(st.secrets["gcp_json"])
+                credentials = service_account.Credentials.from_service_account_info(creds_dict)
+                genai.configure(credentials=credentials)
+
                 
-                # ဗီဒီယိုဖိုင်ကို ယာယီသိမ်းဆည်းခြင်း
+               # ဗီဒီယိုဖိုင်ကို ယာယီသိမ်းဆည်းခြင်း
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_video:
                     temp_video.write(uploaded_file.read())
                     video_path = temp_video.name
